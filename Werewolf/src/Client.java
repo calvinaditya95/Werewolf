@@ -20,6 +20,8 @@ public class Client {
     private ObjectOutputStream os = null;
     private int playerID;
     private int type = 0;
+    private int prevProposalID = 0;
+    private int proposalNumber = 0;
     
     public Client(String addr, int port) {
         try {
@@ -88,7 +90,7 @@ public class Client {
         JSONObject data = new JSONObject();
         try {
             data.put("method", "prepare_proposal");
-            data.put("proposal_id", "(1,"+playerID+")");
+            data.put("proposal_id", "("+proposalNumber+","+playerID+")");
         } catch (JSONException ex) {
             Logger.getLogger(Client.class.getName()).log(Level.SEVERE, null, ex);
         }
@@ -96,11 +98,11 @@ public class Client {
         sendTCP(data);
     }
     
-    private void acceptProposalPaxos(int proposal_number){
+    private void acceptProposalPaxos(){
         JSONObject data = new JSONObject();
         try {
             data.put("method", "accept_proposal");
-            data.put("proposal_id", "("+proposal_number+","+playerID+")");
+            data.put("proposal_id", "("+proposalNumber+","+playerID+")");
             data.put("kpu_id", "1");
         } catch (JSONException ex) {
             Logger.getLogger(Client.class.getName()).log(Level.SEVERE, null, ex);
@@ -112,7 +114,7 @@ public class Client {
     private void acceptProposalClient(){
         JSONObject data = new JSONObject();
         try {
-            data.put("method", "prepare_proposal");
+            data.put("method", "accepted_proposal");
             data.put("kpu_id", playerID);
             data.put("Description", "Kpu is selected");
         } catch (JSONException ex) {
@@ -134,13 +136,25 @@ public class Client {
         sendTCP(data);
     }
     
+    private void killCivilian(int id){
+        JSONObject data = new JSONObject();
+        try {
+            data.put("method", "vote_civilian");
+            data.put("player_id", id);
+        } catch (JSONException ex) {
+            Logger.getLogger(Client.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        
+        sendTCP(data);
+    }
+    
     private void infoWerewolf(){
         JSONObject data = new JSONObject();
         try {
             data.put("method", "vote_result_werewolf");
             data.put("vote_status", "1");
-            data.put("vote_status", "1");
-            data.put("vote_status", "1");
+            data.put("player_killed", "1");
+            data.put("vote_result", "1");
         } catch (JSONException ex) {
             Logger.getLogger(Client.class.getName()).log(Level.SEVERE, null, ex);
         }
