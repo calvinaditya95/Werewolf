@@ -18,7 +18,16 @@ public class Client {
     private ObjectInputStream is = null;
     private Socket socket = null;  
     private ObjectOutputStream os = null;
+    private int playerID;
+    private int type = 0;
+    private int prevProposalID = 0;
+    private int proposalNumber = 0;
     
+    /**
+     * Create client with server socket
+     * @param addr server IP Address
+     * @param port server port
+     */
     public Client(String addr, int port) {
         try {
             socket = new Socket(addr, port);
@@ -30,31 +39,67 @@ public class Client {
     }
     
     /**
-     * 
+     * Join Game
      * @param username username of the client
      * @param addr use inetaddress.getlocalhost() to get local IP Address
      * @param port connection port
      */
     private void join(String username, String addr, int port) {
-        JSONObject data = new JSONObject();
         try {
-            data.put("method", "join");
-            data.put("username", username);
-            data.put("udp_address", addr);
-            data.put("udp_port", port);
+            JSONObject outData = new JSONObject();
+            JSONObject inData = new JSONObject();
+            try {
+                outData.put("method", "join");
+                outData.put("username", username);
+                outData.put("udp_address", addr);
+                outData.put("udp_port", port);
+            } catch (JSONException ex) {
+                Logger.getLogger(Client.class.getName()).log(Level.SEVERE, null, ex);
+            }
+            
+            sendTCP(outData);
+            inData = receiveTCP();
+            
+            String status = inData.getString("status");
+            
+            if (status == "ok") {
+                this.playerID = inData.getInt("player_id");
+            }
+            else if (status == "fail") {
+                System.out.println(inData.getString("description"));
+            }
+            else {
+                System.out.println(inData.getString("description"));
+            }
         } catch (JSONException ex) {
             Logger.getLogger(Client.class.getName()).log(Level.SEVERE, null, ex);
         }
-        
-        send(data);
     }
     
-    private void send(JSONObject data) {
+    /**
+     * Send JSONObject to server
+     * @param data JSONObject to be sent
+     */
+    private void sendTCP(JSONObject data) {
         try {
             os.writeObject(data);
         } catch (IOException ex) {
             Logger.getLogger(Client.class.getName()).log(Level.SEVERE, null, ex);
         }
+    }
+    
+    private JSONObject receiveTCP() {
+        JSONObject obj = new JSONObject();
+        try {
+            obj = (JSONObject)is.readObject();
+        }
+        catch (ClassNotFoundException ex) {
+            Logger.getLogger(Client.class.getName()).log(Level.SEVERE, null, ex);
+        } catch (IOException ex) {
+            Logger.getLogger(Client.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        
+        return obj;
     }
     
 /**
