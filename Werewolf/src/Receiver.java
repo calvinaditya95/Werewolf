@@ -2,9 +2,9 @@ import java.net.DatagramSocket;
 import java.net.DatagramPacket;
 import java.net.InetAddress;
 
-public class Receiver
-{
-	/**
+public class Receiver 
+{ 
+        /**
 	 * Contoh kode program untuk node yang menerima paket. Idealnya dalam paxos
 	 * balasan juga dikirim melalui UnreliableSender.
 	 */
