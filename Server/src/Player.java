@@ -98,12 +98,13 @@ public class Player extends Thread {
                 JSONObject response = new JSONObject();
                 response.put("method", "change_phase");
 
-                if (Server.time.equals("day"))
+                if (Server.time.equals("day")) {
                     Server.time = "night";
-                else if (Server.time.equals("night"))
+                }
+                else if (Server.time.equals("night")) {
                     Server.time = "day";
-
-                Server.days++;
+                    Server.days++;
+                }
 
                 response.put("time", Server.time);
                 response.put("days", Server.days);
@@ -268,7 +269,7 @@ public class Player extends Thread {
                             response.put("description", "tidak kuorum");
                         }
                     }                    
-                    out.println(response.toString());
+                    sendToAll(response.toString());
                 }
             }
             else if (method.equals("vote_result_werewolf")) {
