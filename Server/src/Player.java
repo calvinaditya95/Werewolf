@@ -204,7 +204,7 @@ public class Player extends Thread {
                     temp.put("address", p.udp_address);
                     temp.put("port", p.udp_port);
                     temp.put("username", p.username);
-                    if (is_alive == 0) {
+                    if (p.is_alive == 0) {
                         temp.put("role", p.role);
                     }
                     
