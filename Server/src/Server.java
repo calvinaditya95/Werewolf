@@ -16,6 +16,7 @@ public class Server {
     public static int days;
     public static int civilianVoteCount;
     public static boolean gameStarted;
+    public static int nextId;
     
     public static void deletePlayer(Player p) {
         playerList.remove(p);
@@ -55,6 +56,7 @@ public class Server {
         time = "day";
         days = 1;
         civilianVoteCount = 0;
+        nextId = 0;
         gameStarted = false;
 
         System.out.print("Enter port number\t: ");

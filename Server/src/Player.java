@@ -144,7 +144,8 @@ public class Player extends Thread {
             if (method.equals("join")) {
                 System.out.println(input);
                 username = request.getString("username");
-                id = Server.playerList.indexOf(this);
+                id = Server.nextId;
+                Server.nextId++;
                 udp_address = request.getString("udp_address");
                 udp_port = request.getInt("udp_port");
                 is_alive = 1;
