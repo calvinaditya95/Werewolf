@@ -46,7 +46,7 @@ public class ClientListener extends Thread {
             voteCount.set(responseJSON.getInt("player_id"), a+1);
             
             while (messageCount != playerCount) {
-                responseJSON = Client.parseToJSON(receiveUDP(myPort));
+                responseJSON = Client.parseToJSON(Client.receiveUDP());
 
                 String method = responseJSON.getString("method");
                 if (method.equals("vote_werewolf")) {
@@ -100,7 +100,7 @@ public class ClientListener extends Thread {
             voteCount.set(responseJSON.getInt("player_id"), a+1);
             
             while (messageCount != playerCount) {
-                responseJSON = Client.parseToJSON(receiveUDP(myPort));
+                responseJSON = Client.parseToJSON(Client.receiveUDP());
 
                 String method = responseJSON.getString("method");
                 if (method.equals("vote_civilian")) {
@@ -145,7 +145,7 @@ public class ClientListener extends Thread {
         JSONObject responseJSON = new JSONObject();
         int kpu_id = -1;
         
-        response = receiveUDP(myPort);
+        response = Client.receiveUDP();
         responseJSON = Client.parseToJSON(response);
         if(responseJSON.has("method")){
             String method = responseJSON.getString("method");
@@ -154,7 +154,7 @@ public class ClientListener extends Thread {
                 int a = temp.getInt(0);
                 int b = temp.getInt(1);
                 
-                response = receiveUDP(myPort);
+                response = Client.receiveUDP();
                 responseJSON = Client.parseToJSON(response);
                 JSONArray temp2 = responseJSON.getJSONArray("proposal_id");
                 int c = temp2.getInt(0);
@@ -214,26 +214,7 @@ public class ClientListener extends Thread {
                 receiveCivilianVote(responseJSON);
             }
         }
-    }
-    
-    private DatagramPacket receiveUDP(int listenPort) {
-        DatagramSocket serverSocket;
-        try {
-            serverSocket = new DatagramSocket(listenPort);
-            byte[] receiveData = new byte[1024];
-
-            DatagramPacket receivePacket = new DatagramPacket(receiveData, receiveData.length);
-            serverSocket.receive(receivePacket);
-            return receivePacket;
-        } catch (SocketException ex) {
-            Logger.getLogger(Client.class.getName()).log(Level.SEVERE, null, ex);
-        } catch (IOException ex) {
-            Logger.getLogger(Client.class.getName()).log(Level.SEVERE, null, ex);
-        }
-        
-        return null;
-    }
-    
+    }    
     @Override
     public void run() {
         while (true) {

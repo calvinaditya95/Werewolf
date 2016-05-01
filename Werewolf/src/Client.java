@@ -21,6 +21,7 @@ public class Client {
     private boolean start = false;
     private String serverIP;
     private int serverPort;
+    private static DatagramSocket serverSocket;
     private BufferedReader is = null;
     private Socket socket = null;  
     private static PrintWriter os = null;
@@ -46,6 +47,9 @@ public class Client {
             socket = new Socket(addr, port);
             os = new PrintWriter(socket.getOutputStream(), true);
             is = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+            
+            serverSocket = new DatagramSocket(udpPort);
+            
             ClientListener cl = new ClientListener(udpPort);
             cl.start();
             
@@ -197,10 +201,8 @@ public class Client {
         return obj;
     }
     
-    private DatagramPacket receiveUDP(int listenPort) {
-        DatagramSocket serverSocket;
+    public static DatagramPacket receiveUDP() {
         try {
-            serverSocket = new DatagramSocket(listenPort);
             byte[] receiveData = new byte[1024];
 
             DatagramPacket receivePacket = new DatagramPacket(receiveData, receiveData.length);
@@ -393,7 +395,7 @@ public class Client {
             sendUDP(data, targetAddr, clients.get(idx).getMyPort());
             
             while (fail) {
-                responseJSON = parseToJSON(receiveUDP(getMyPort()));
+                responseJSON = parseToJSON(receiveUDP());
                 System.out.println(responseJSON);
                 
                 String status = responseJSON.getString("status");
@@ -429,7 +431,7 @@ public class Client {
             while (fail) {
                 Scanner in = new Scanner(System.in);
                 int port = in.nextInt();
-                responseJSON = parseToJSON(receiveUDP(port));
+                responseJSON = parseToJSON(receiveUDP());
                 String status = responseJSON.getString("status");
                 
                 if (status.equals("ok")) {
