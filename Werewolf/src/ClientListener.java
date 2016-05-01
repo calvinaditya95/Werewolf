@@ -2,9 +2,11 @@
 import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
+import java.net.InetAddress;
 import java.net.SocketException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import org.json.JSONObject;
 
 /*
  * To change this license header, choose License Headers in Project Properties.
@@ -16,8 +18,22 @@ import java.util.logging.Logger;
  *
  * @author Asus
  */
-public class ClientListener extends Thread {
-    private DatagramPacket packet;
+public class ClientListener extends Thread {  
+    private boolean done = false;
+    private int senderNum;
+    
+    public ClientListener(int i) {
+        this.senderNum = i;
+    }
+    
+    private void listenProposal() {
+        DatagramPacket response = null;
+        JSONObject responseJSON = new JSONObject();
+        
+        response = receiveUDP();
+        responseJSON = Client.parseToJSON(response);
+        
+    }
     
     private DatagramPacket receiveUDP() {
         int listenPort = 9876;
@@ -40,6 +56,8 @@ public class ClientListener extends Thread {
     
     @Override
     public void run() {
-        
+        while (!done) {
+            listenProposal();
+        }
     }
 }

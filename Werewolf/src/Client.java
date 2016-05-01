@@ -18,8 +18,8 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 public class Client {
-    private final String serverIP = "192.168.0.47";
-    private final int serverPort = 1000;
+    private String serverIP;
+    private int serverPort;
     private BufferedReader is = null;
     private Socket socket = null;  
     private PrintWriter os = null;
@@ -40,9 +40,9 @@ public class Client {
      * @param addr server IP Address
      * @param port server port
      */
-    public Client(String username) {
+    public Client(String username, String addr, int port) {
         try {
-            socket = new Socket(serverIP, serverPort);
+            socket = new Socket(addr, port);
             os = new PrintWriter(socket.getOutputStream(), true);
             is = new BufferedReader(new InputStreamReader(socket.getInputStream()));
             
@@ -50,6 +50,8 @@ public class Client {
             this.status = 1;
             this.myAddress = InetAddress.getLocalHost().getHostAddress();
             this.myPort = 9876;
+            this.serverIP = addr;
+            this.serverPort = port;
         } catch (IOException ex) {
             Logger.getLogger(Client.class.getName()).log(Level.SEVERE, null, ex);
         }
@@ -125,14 +127,14 @@ public class Client {
 
                 String status = inData.getString("status");
 
-                if (status == "ok") {
+                if (status.equals("ok")) {
                     this.playerID = inData.getInt("player_id");
                     fail = !fail;
                 }
-                else if (status == "fail") {
+                else if (status.equals("fail")) {
                     System.out.println(inData.getString("description"));
                 }
-                else if (status == "error"){
+                else if (status.equals("error")){
                     System.out.println(inData.getString("description"));
                 }
             }
@@ -166,6 +168,7 @@ public class Client {
         JSONObject obj = new JSONObject();
         try {
             obj = new JSONObject(is.readLine());
+            System.out.println(obj);
         } catch (JSONException ex) {
             Logger.getLogger(Client.class.getName()).log(Level.SEVERE, null, ex);
         } catch (IOException ex) {
@@ -207,10 +210,10 @@ public class Client {
                 response = receiveTCP();
                 String status = response.getString("status");
 
-                if (status == "ok") {
+                if (status.equals("ok")) {
                     fail = !fail;
                 }
-                else if (status == "fail") {
+                else if (status.equals("fail")) {
                     System.out.println(response.getString("description"));
                 }
                 else {
@@ -236,7 +239,7 @@ public class Client {
                 response = receiveTCP();
                 String status = response.getString("status");
                 
-                if (status == "ok") {
+                if (status.equals("ok")) {
                     fail = !fail;
                 }
                 else {
@@ -261,13 +264,13 @@ public class Client {
                 response = receiveTCP();
                 String status = response.getString("status");
                 
-                if (status == "ok") {
+                if (status.equals("ok")) {
                     fail = !fail;
                     clientJSON = response.getJSONArray("clients");
                     
                     for (int i=0; i<clientJSON.length(); i++) {
                         JSONObject temp = clientJSON.getJSONObject(i);
-                        Client tempClient = new Client(temp.getString("username"));
+                        Client tempClient = new Client(temp.getString("username"), this.serverIP, this.serverPort);
                         tempClient.setMyAddress(temp.getString("address"));
                         tempClient.setMyPort(temp.getInt("port"));
                         tempClient.setStatus(temp.getInt("is_alive"));
@@ -278,7 +281,7 @@ public class Client {
                         clients.add(tempClient);
                     }
                 }
-                else if (status == "fail") {
+                else if (status.equals("fail")) {
                     System.out.println(response.getString("description"));
                 }
                 else {
@@ -311,27 +314,7 @@ public class Client {
                 }
             }
             
-            while (count != playerCount) {
-                response = receiveUDP();
-                responseJSON = parseToJSON(response);
-                
-                String status = responseJSON.getString("status");
-                if (status == "ok") {
-                    count++;
-                    //TODO:
-                    //previous accepted kpu id
-                }
-                else if (status == "fail") {
-                    System.out.println(responseJSON.getString("description"));
-                    InetAddress targetAddr = response.getAddress();
-                    sendUDP(data, targetAddr, 9876);
-                }
-                else {
-                    System.out.println(responseJSON.getString("description"));
-                }
-            }
-            
-            
+            this.proposalNumber++;            
         } catch (JSONException ex) {
             Logger.getLogger(Client.class.getName()).log(Level.SEVERE, null, ex);
         } catch (UnknownHostException ex) {
@@ -380,13 +363,13 @@ public class Client {
                 responseJSON = parseToJSON(receiveUDP());
                 String status = responseJSON.getString("status");
                 
-                if (status == "ok") {
+                if (status.equals("ok")) {
                     fail = !fail;
                 }
-                else if (status == "fail") {
+                else if (status.equals("fail")) {
                     System.out.println("FAIL");
                 }
-                else if (status == "error") {
+                else if (status.equals("error")) {
                     System.out.println("ERROR");
                 }
             }
@@ -420,7 +403,7 @@ public class Client {
                 responseJSON = parseToJSON(receiveUDP());
 
                 String method = responseJSON.getString("method");
-                if (method == "vote_werewolf") {
+                if (method.equals("vote_werewolf")) {
                     messageCount++;
                     int a = voteCount.get(responseJSON.getInt("player_id"));
                     voteCount.set(responseJSON.getInt("player_id"), a+1);
@@ -479,13 +462,13 @@ public class Client {
                 responseJSON = parseToJSON(receiveUDP());
                 String status = responseJSON.getString("status");
                 
-                if (status == "ok") {
+                if (status.equals("ok")) {
                     fail = !fail;
                 }
-                else if (status == "fail") {
+                else if (status.equals("fail")) {
                     System.out.println("FAIL");
                 }
-                else if (status == "error") {
+                else if (status.equals("error")) {
                     System.out.println("ERROR");
                 }
             }
@@ -533,7 +516,7 @@ public class Client {
                 responseJSON = parseToJSON(receiveUDP());
 
                 String method = responseJSON.getString("method");
-                if (method == "vote_civilian") {
+                if (method.equals("vote_civilian")) {
                     messageCount++;
                     int a = voteCount.get(responseJSON.getInt("player_id"));
                     voteCount.set(responseJSON.getInt("player_id"), a+1);
@@ -598,7 +581,7 @@ public class Client {
         sendTCP(data);
     }
     
-    private JSONObject parseToJSON(DatagramPacket packet) {
+    public static JSONObject parseToJSON(DatagramPacket packet) {
         String sentence = new String(packet.getData(), 0, packet.getLength());
         try {
             return new JSONObject(sentence);
@@ -629,9 +612,14 @@ public class Client {
         String addr = in.nextLine();
         System.out.print("Port: ");
         int port = in.nextInt();
-        Client c = new Client("client1");
+        Client c = new Client("client1", addr, port);
         c.join();
         System.out.println("1st phase");
+        c.requestClients();
+        System.out.println("2nd phase");
+        while (true) {
+            
+        }
         /*
         BufferedReader inFromUser = new BufferedReader(new InputStreamReader(System.in));
 
