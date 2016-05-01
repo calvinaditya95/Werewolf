@@ -52,3 +52,6 @@ Network Trash Folder
 Temporary Items
 .apdisk
 >>>>>>> 54f11fb59659333182ec3873f66282a87e671aed
+/Server/nbproject/private/
+/Server/build/
+/Server/dist/
