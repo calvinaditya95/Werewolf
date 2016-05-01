@@ -1,6 +1,7 @@
 import java.io.*;
 import java.net.*;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import org.json.JSONException;
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -10,6 +11,7 @@ public class Server {
     private static ServerSocket serverSocket;
     private static Scanner consoleInput = new Scanner(System.in);
     public static Vector<Player> playerList;
+    public static Vector<Integer> acceptedProposal;
     public static String time;
     public static int days;
     public static int civilianVoteCount;
@@ -49,6 +51,7 @@ public class Server {
     
     public static void main(String args[]) {
         playerList = new Vector<>();
+        acceptedProposal = new Vector<>();
         time = "day";
         days = 1;
         civilianVoteCount = 0;

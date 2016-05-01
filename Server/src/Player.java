@@ -141,8 +141,6 @@ public class Player extends Thread {
             JSONObject request = new JSONObject(input);
             String method = request.getString("method");
             
-            JSONObject response = new JSONObject();
-            
             if (method.equals("join")) {
                 System.out.println(input);
                 username = request.getString("username");
@@ -157,12 +155,14 @@ public class Player extends Thread {
                 else
                     role = "civilian";
                 
+                JSONObject response = new JSONObject();
                 response.put("status", "ok");
                 response.put("player_id", id);
                 out.println(response.toString());
             }
             else if (method.equals("ready")) {
                 ready = true;
+                JSONObject response = new JSONObject();
                 response.put("status", "ok");
                 response.put("description", "waiting for other player to start");
                 out.println(response.toString());
@@ -180,15 +180,21 @@ public class Player extends Thread {
             else if (method.equals("leave")) {
                 if (!Server.gameStarted) {
                     ready = false;
+                    JSONObject response = new JSONObject();
                     response.put("status", "ok");
+                    out.println(response.toString());
                     Server.deletePlayer(this);
+                    
                 }
                 else {
+                    JSONObject response = new JSONObject();
                     response.put("status", "fail");
                     response.put("description", "Failed to leave game");
+                    out.println(response.toString());
                 }
             }
             else if (method.equals("client_address")) {
+                JSONObject response = new JSONObject();
                 response.put("status", "ok");
                 
                 JSONArray arr = new JSONArray();
@@ -213,7 +219,40 @@ public class Player extends Thread {
                 out.println(response.toString());
             }
             else if (method.equals("accepted_proposal")) {
-                //
+                int kpuId = request.getInt("kpu_id");
+                Server.acceptedProposal.add(kpuId);
+                
+                JSONObject response = new JSONObject();
+                response.put("status", "ok");
+                response.put("description", "");
+                out.println(response.toString());
+                
+                if (Server.acceptedProposal.size() >= Server.playerList.size()-2) {
+                    int mode = Server.acceptedProposal.get(0);
+                    int modeCount = 0;
+                    
+                    for(int i = 0; i < Server.acceptedProposal.size(); i++) {
+                        int curInt = Server.acceptedProposal.get(i);
+                        int count = 0;
+                        
+                        for (int j = 0; j < Server.acceptedProposal.size(); j++) {
+                            if (Server.acceptedProposal.get(j) == curInt)
+                                count++;
+                        }
+                        
+                        if (count > modeCount) {
+                            modeCount = count;
+                            mode = curInt;
+                        }
+                        else if (count == modeCount && curInt > mode) {
+                            mode = curInt;
+                        }
+                    }
+                    response = new JSONObject();
+                    response.put("method", "kpu_selected");
+                    response.put("kpu_id", mode);
+                    out.println(response.toString());
+                }
             }
             else if (method.equals("vote_result_werewolf")) {
                 int vote_status = request.getInt("vote_status");
@@ -221,6 +260,7 @@ public class Player extends Thread {
                     int player_killed = request.getInt("player_killed");
                     killPlayer(player_killed);
                     
+                    JSONObject response = new JSONObject();
                     response.put("status", "ok");
                     response.put("description", "");
                     out.println(response.toString());
@@ -228,6 +268,7 @@ public class Player extends Thread {
                     changePhase();
                 }
                 else if (vote_status == -1) {
+                    JSONObject response = new JSONObject();
                     response.put("status", "ok");
                     response.put("description", "");
                     out.println(response.toString());
@@ -250,6 +291,7 @@ public class Player extends Thread {
                     int player_killed = request.getInt("player_killed");
                     killPlayer(player_killed);
                     
+                    JSONObject response = new JSONObject();
                     response.put("status", "ok");
                     response.put("description", "");
                     out.println(response.toString());
@@ -257,6 +299,7 @@ public class Player extends Thread {
                     changePhase();
                 }
                 else if (vote_status == -1) {
+                    JSONObject response = new JSONObject();
                     response.put("status", "ok");
                     response.put("description", "");
                     out.println(response.toString());
