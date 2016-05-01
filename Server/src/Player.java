@@ -145,12 +145,12 @@ public class Player extends Thread {
                 is_alive = 1;
                 ready = false;
                 
+                Server.playerList.add(this);
+                
                 if (Server.playerList.indexOf(this) == 2 || Server.playerList.indexOf(this) == 3)
                     role = "werewolf";
                 else
-                    role = "civilian";
-                
-                Server.playerList.add(this);
+                    role = "civilian";                
                 
                 JSONObject response = new JSONObject();
                 response.put("status", "ok");
