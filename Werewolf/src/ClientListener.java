@@ -35,6 +35,7 @@ public class ClientListener extends Thread {
         JSONObject responseJSON = obj;
         
         for (int i=0; i<Client.clients.size(); i++) {
+            voteCount.add(0);
             if (Client.clients.get(i).getRace() == 1) {
                 playerCount = 1;
             }

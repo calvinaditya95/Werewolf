@@ -19,14 +19,15 @@ import org.json.JSONObject;
 
 public class Client {
     private boolean start = false;
+    private ServerListener sl = null;
     private String serverIP;
     private int serverPort;
     private static DatagramSocket serverSocket;
     private BufferedReader is = null;
     private Socket socket = null;  
     private static PrintWriter os = null;
-    public static Vector<Client> clients = new Vector();
-    public static int kpuID  = -1;
+    public static Vector<Client> clients;
+    public static int kpuID  = 4;
     private int playerID;
     private String username;
     private String myAddress;
@@ -42,16 +43,18 @@ public class Client {
      * @param addr server IP Address
      * @param port server port
      */
-    public Client(String username, String addr, int port, int udpPort) {
+    public Client(String username, String addr, int port, int udpPort, boolean create) {
         try {
             socket = new Socket(addr, port);
             os = new PrintWriter(socket.getOutputStream(), true);
             is = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+            if (create) {
+                serverSocket = new DatagramSocket(udpPort);
             
-            serverSocket = new DatagramSocket(udpPort);
-            
-            ClientListener cl = new ClientListener(udpPort);
-            cl.start();
+                ClientListener cl = new ClientListener(udpPort);
+                cl.start();
+                this.clients = new Vector<Client>();
+            }
             
             this.username = username;
             this.status = 1;
@@ -62,6 +65,21 @@ public class Client {
         } catch (IOException ex) {
             Logger.getLogger(Client.class.getName()).log(Level.SEVERE, null, ex);
         }
+    }
+    
+    public void spawnServerListener() {
+        this.sl = new ServerListener(socket);
+        sl.start();
+    }
+    
+    public boolean isHighest() {
+        if (this.playerID == clients.size()-1) {
+            return true;
+        }
+        else if (this.playerID == clients.size()-2) {
+            return true;
+        }
+        return false;
     }
     
     public boolean isStart() {
@@ -170,7 +188,7 @@ public class Client {
      * Send JSONObject to server
      * @param data JSONObject to be sent
      */
-    private static void sendTCP(JSONObject data) {
+    public static void sendTCP(JSONObject data) {
         os.println(data.toString());
     }
     
@@ -300,12 +318,13 @@ public class Client {
                     
                     for (int i=0; i<clientJSON.length(); i++) {
                         JSONObject temp = clientJSON.getJSONObject(i);
-                        Client tempClient = new Client(temp.getString("username"), this.serverIP, this.serverPort, temp.getInt("port"));
+                        Client tempClient = new Client(temp.getString("username"), this.serverIP, this.serverPort, temp.getInt("port"), false);
                         tempClient.setMyAddress(temp.getString("address"));
                         tempClient.setStatus(temp.getInt("is_alive"));
                         tempClient.setID(temp.getInt("player_id"));
                         if (temp.has("role")) {
                             tempClient.setRace(1);
+                            tempClient.setStatus(0);
                         }
                         clients.add(tempClient);
                     }
@@ -374,7 +393,7 @@ public class Client {
         JSONObject data = new JSONObject();
         try {
             data.put("method", "accepted_proposal");
-            data.put("kpu_id", playerID);
+            data.put("kpu_id", kpuID);
             data.put("Description", "Kpu is selected");
         } catch (JSONException ex) {
             Logger.getLogger(Client.class.getName()).log(Level.SEVERE, null, ex);
@@ -393,15 +412,15 @@ public class Client {
             int idx = searchByPlayerID(kpuID);
             InetAddress targetAddr = InetAddress.getByName(clients.get(idx).getMyAddress());
             sendUDP(data, targetAddr, clients.get(idx).getMyPort());
-            
+            /*
             while (fail) {
                 responseJSON = parseToJSON(receiveUDP());
                 System.out.println(responseJSON);
                 
                 String status = responseJSON.getString("status");
-                
+                fail = false;
                 if (status.equals("ok")) {
-                    fail = !fail;
+                    fail = false;
                 }
                 else if (status.equals("fail")) {
                     System.out.println("FAIL");
@@ -409,7 +428,7 @@ public class Client {
                 else if (status.equals("error")) {
                     System.out.println("ERROR");
                 }
-            }
+            }*/
         } catch (JSONException ex) {
             Logger.getLogger(Client.class.getName()).log(Level.SEVERE, null, ex);
         } catch (UnknownHostException ex) {
@@ -427,7 +446,7 @@ public class Client {
             int idx = searchByPlayerID(kpuID);
             InetAddress targetAddr = InetAddress.getByName(clients.get(idx).getMyAddress());
             sendUDP(data, targetAddr, clients.get(idx).getMyPort());
-            
+            /*
             while (fail) {
                 Scanner in = new Scanner(System.in);
                 int port = in.nextInt();
@@ -443,7 +462,7 @@ public class Client {
                 else if (status.equals("error")) {
                     System.out.println("ERROR");
                 }
-            }
+            }*/
         } catch (JSONException ex) {
             Logger.getLogger(Client.class.getName()).log(Level.SEVERE, null, ex);
         } catch (UnknownHostException ex) {
@@ -494,7 +513,7 @@ public class Client {
         return null;
     }
     
-    private int searchByPlayerID(int id) {
+    public static int searchByPlayerID(int id) {
         for (int i=0; i<clients.size(); i++) {
             if (clients.get(i).getID() == id) {
                 return i;
@@ -506,7 +525,7 @@ public class Client {
     public static void sendToID(int id, JSONObject data) {
         
         try {
-            InetAddress targetAddr = InetAddress.getByName(clients.get(id).getMyAddress());
+            InetAddress targetAddr = InetAddress.getByName(clients.get(searchByPlayerID(id)).getMyAddress());
             sendUDP(data, targetAddr, clients.get(id).getMyPort());
         } catch (UnknownHostException ex) {
             Logger.getLogger(Client.class.getName()).log(Level.SEVERE, null, ex);
@@ -523,29 +542,32 @@ public class Client {
         System.out.print("Username: ");
         String username = in.nextLine();
         //System.out.print("Server IP: ");
-        String addr = "localhost";
+        String addr = "192.168.0.44";
         //System.out.print("Server Port: ");
         int port = 1000;
         System.out.print("UDP Port: ");
         int udpPort = in.nextInt();
-        Client c = new Client(username, addr, port, udpPort);
+        Client c = new Client(username, addr, port, udpPort, true);
         c.join();
         c.ready();
         System.out.println("1st phase");
         if (c.isStart()) {
-            c.requestClients();
-            System.out.println("2nd phase");
-            c.prepareProposal();
-            System.out.println("3rd phase");
-            c.acceptProposalPaxos();
-            System.out.println("4th phase");
-            c.acceptProposalClient();
-            System.out.println("5th phase");
-            c.voteWerewolf(0);
-            System.out.println("6th phase");
-        }
-        while (true) {
-            
+            while (true) {
+                c.requestClients();
+                System.out.println("2nd phase");
+                if(c.isHighest()) {
+                    c.prepareProposal();
+                    System.out.println("3rd phase");
+                    c.acceptProposalPaxos();
+                    System.out.println("4th phase");
+                }
+
+                c.spawnServerListener();
+                c.acceptProposalClient();
+                System.out.println("5th phase");
+                c.voteWerewolf(0);
+                System.out.println("6th phase");
+            }
         }
         /*
         BufferedReader inFromUser = new BufferedReader(new InputStreamReader(System.in));
