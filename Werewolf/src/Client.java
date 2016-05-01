@@ -551,7 +551,7 @@ public class Client {
         System.out.print("Username: ");
         String username = in.nextLine();
         //System.out.print("Server IP: ");
-        String addr = "192.168.0.44";
+        String addr = "localhost";
         //System.out.print("Server Port: ");
         int port = 1000;
         System.out.print("UDP Port: ");
@@ -574,9 +574,12 @@ public class Client {
                 c.spawnServerListener();
                 c.acceptProposalClient();
                 System.out.println("5th phase");
+                /*
                 if(!c.isHuman()) {
                     c.voteWerewolf(1);
                 }
+                */
+                c.killCivilian(1);
                 System.out.println("6th phase");
         }
         /*

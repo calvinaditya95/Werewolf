@@ -51,13 +51,15 @@ public class ClientListener extends Thread {
             
             while (messageCount != playerCount) {
                 responseJSON = Client.parseToJSON(Client.receiveUDP());
-
-                String method = responseJSON.getString("method");
-                if (method.equals("vote_werewolf")) {
-                    messageCount++;
-                    System.out.println("2nd count");
-                    a = voteCount.get(responseJSON.getInt("player_id"));
-                    voteCount.set(responseJSON.getInt("player_id"), a+1);
+                
+                if (responseJSON.has("method")) {
+                    String method = responseJSON.getString("method");
+                    if (method.equals("vote_werewolf")) {
+                        messageCount++;
+                        System.out.println("2nd count");
+                        a = voteCount.get(responseJSON.getInt("player_id"));
+                        voteCount.set(responseJSON.getInt("player_id"), a+1);
+                    }
                 }
             }
             
@@ -107,11 +109,16 @@ public class ClientListener extends Thread {
             while (messageCount != playerCount) {
                 responseJSON = Client.parseToJSON(Client.receiveUDP());
 
-                String method = responseJSON.getString("method");
-                if (method.equals("vote_civilian")) {
-                    messageCount++;
-                    a = voteCount.get(responseJSON.getInt("player_id"));
-                    voteCount.set(responseJSON.getInt("player_id"), a+1);
+                if (responseJSON.has("method")) {
+                    String method = responseJSON.getString("method");
+                    if (method.equals("vote_civilian")) {
+                        messageCount++;
+                        a = voteCount.get(responseJSON.getInt("player_id"));
+                        voteCount.set(responseJSON.getInt("player_id"), a+1);
+                    }   
+                }
+                else {
+                    
                 }
             }
             
