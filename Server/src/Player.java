@@ -15,13 +15,11 @@ public class Player extends Thread {
     
     public Socket socket;
     public PrintWriter out;
-    private BufferedReader in;
 
     public Player(Socket s) {
         socket = s;
         try {
             out = new PrintWriter(socket.getOutputStream(), true);
-            in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
         }
         catch (IOException e) {
             System.out.println("Player error: " + e);
@@ -29,9 +27,10 @@ public class Player extends Thread {
     }
 
     public void run() {
-        String line;
-
         try {
+            String line;
+            BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+            
             while (true) {
                 line = in.readLine();
                 process(line);
