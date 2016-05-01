@@ -21,6 +21,7 @@ import org.json.JSONObject;
 public class ClientListener extends Thread {  
     private boolean done = false;
     private int senderNum;
+    private int messageNum = 0;
     
     public ClientListener(int i) {
         this.senderNum = i;
@@ -58,6 +59,8 @@ public class ClientListener extends Thread {
     public void run() {
         while (!done) {
             listenProposal();
+            if(senderNum == messageNum)
+                done = false;
         }
     }
 }

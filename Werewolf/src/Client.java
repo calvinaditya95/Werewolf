@@ -24,7 +24,7 @@ public class Client {
     private Socket socket = null;  
     private PrintWriter os = null;
     private Vector<Client> clients = new Vector();
-    private int kpuID;
+    private int kpuID  = 0;
     private int playerID;
     private String username;
     private String myAddress;
@@ -617,6 +617,10 @@ public class Client {
         System.out.println("1st phase");
         c.requestClients();
         System.out.println("2nd phase");
+        c.voteWerewolf(0);
+        System.out.println("3rd phase");
+        c.receiveWerewolfVote();
+        System.out.println("4th phase");
         while (true) {
             
         }
