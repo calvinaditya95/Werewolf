@@ -211,7 +211,7 @@ public class Player extends Thread {
                         temp.put("role", p.role);
                     }
                     
-                    arr.put(temp.toString());
+                    arr.put(temp);
                 }
                 
                 response.put("clients", arr);
