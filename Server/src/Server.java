@@ -35,8 +35,8 @@ public class Server {
                 JSONArray arr = new JSONArray();
                 if (playerList.get(i).role.equals("werewolf")) {
                     for (int j = 0; j < playerList.size(); j++) {
-                        if (i != j && playerList.get(i).role.equals("werewolf")) {
-                            arr.put(playerList.get(i).username);
+                        if (i != j && playerList.get(j).role.equals("werewolf")) {
+                            arr.put(playerList.get(j).username);
                         }
                     }
                 }
