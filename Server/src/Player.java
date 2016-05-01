@@ -11,6 +11,7 @@ public class Player extends Thread {
     public int udp_port;
     public int is_alive;
     public String role;
+    public boolean ready;
     
     public Socket socket;
     public PrintWriter out;
@@ -35,7 +36,7 @@ public class Player extends Thread {
                 line = in.readLine();
                 process(line);
             }
-        }   
+        }
         catch (IOException e) {
             System.out.println(e);
         }
@@ -149,6 +150,8 @@ public class Player extends Thread {
                 udp_address = request.getString("udp_address");
                 udp_port = request.getInt("udp_port");
                 is_alive = 1;
+                ready = false;
+                
                 if (id == 2 || id == 3)
                     role = "werewolf";
                 else
@@ -158,14 +161,32 @@ public class Player extends Thread {
                 response.put("player_id", id);
                 out.println(response.toString());
             }
-            else if (method.equals("leave")) {
-                response.put("status", "ok");
-                out.println(response.toString());
-            }
             else if (method.equals("ready")) {
+                ready = true;
                 response.put("status", "ok");
                 response.put("description", "waiting for other player to start");
                 out.println(response.toString());
+
+                int readyPlayers = 0;
+                for (int i = 0; i < Server.playerList.size(); i++) {
+                    if (Server.playerList.get(i).ready) {
+                        readyPlayers++;
+                    }                        
+                }
+                if (readyPlayers == Server.playerList.size()) {
+                    Server.startGame();
+                }
+            }
+            else if (method.equals("leave")) {
+                if (!Server.gameStarted) {
+                    ready = false;
+                    response.put("status", "ok");
+                    Server.deletePlayer(this);
+                }
+                else {
+                    response.put("status", "fail");
+                    response.put("description", "Failed to leave game");
+                }
             }
             else if (method.equals("client_address")) {
                 response.put("status", "ok");
@@ -190,6 +211,9 @@ public class Player extends Thread {
                 response.put("clients", arr);
                 response.put("description", "list of clients retrieved");
                 out.println(response.toString());
+            }
+            else if (method.equals("accepted_proposal")) {
+                //
             }
             else if (method.equals("vote_result_werewolf")) {
                 int vote_status = request.getInt("vote_status");

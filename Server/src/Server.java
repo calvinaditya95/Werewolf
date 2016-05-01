@@ -9,13 +9,17 @@ public class Server {
     private static int port;
     private static ServerSocket serverSocket;
     private static Scanner consoleInput = new Scanner(System.in);
-    public static ArrayList<Player> playerList;
+    public static Vector<Player> playerList;
     public static String time;
     public static int days;
     public static int civilianVoteCount;
     public static boolean gameStarted;
     
-    public void startGame() {
+    public static void deletePlayer(Player p) {
+        playerList.remove(p);
+    }
+    
+    public static void startGame() {
         try {
             gameStarted = true;
             
@@ -44,7 +48,7 @@ public class Server {
     }
     
     public static void main(String args[]) {
-        playerList = new ArrayList<>();
+        playerList = new Vector<>();
         time = "day";
         days = 1;
         civilianVoteCount = 0;
