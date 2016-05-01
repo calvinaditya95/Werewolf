@@ -155,6 +155,9 @@ public class Player extends Thread {
                     role = "werewolf";
                 else
                     role = "civilian";
+                
+                Server.playerList.add(this);
+                
                 JSONObject response = new JSONObject();
                 response.put("status", "ok");
                 response.put("player_id", id);

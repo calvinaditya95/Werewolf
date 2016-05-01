@@ -69,7 +69,6 @@ public class Server {
                 Socket clientSocket = serverSocket.accept();
 
                 Player p = new Player(clientSocket);
-                playerList.add(p);
                 p.start();
             }
         }
