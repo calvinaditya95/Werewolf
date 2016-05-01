@@ -35,6 +35,26 @@ public class ClientListener extends Thread {
                 JSONArray temp = responseJSON.getJSONArray("proposal_id");
                 int a = temp.getInt(0);
                 int b = temp.getInt(1);
+                
+                response = receiveUDP(myPort);
+                responseJSON = Client.parseToJSON(response);
+                JSONArray temp2 = responseJSON.getJSONArray("proposal_id");
+                int c = temp2.getInt(0);
+                int d = temp2.getInt(1);
+                
+                int prev = Client.getPrevProposalID();
+                int kpu_id;
+                if( a > c ){
+                    kpu_id = a;
+                }else if(a < c){
+                    kpu_id = c;
+                }else{
+                    if(b > d){
+                        kpu_id = a;
+                    }else if(b < d){
+                        kpu_id = c;
+                    }
+                }
             }
         }
     }
@@ -60,9 +80,7 @@ public class ClientListener extends Thread {
     @Override
     public void run() {
         while (!done) {
-            listenProposal();
-            if(senderNum == messageNum)
-                done = false;
+            
         }
     }
 }
