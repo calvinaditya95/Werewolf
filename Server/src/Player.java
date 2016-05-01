@@ -140,12 +140,13 @@ public class Player extends Thread {
         try {
             JSONObject request = new JSONObject(input);
             String method = request.getString("method");
+            System.out.println(input);
             
             if (method.equals("join")) {
-                System.out.println(input);
                 username = request.getString("username");
                 id = Server.nextId;
                 Server.nextId++;
+                
                 udp_address = request.getString("udp_address");
                 udp_port = request.getInt("udp_port");
                 is_alive = 1;
