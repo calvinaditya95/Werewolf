@@ -245,9 +245,29 @@ public class Player extends Thread {
                             mode = curInt;
                         }
                     }
+                    
                     response = new JSONObject();
-                    response.put("method", "kpu_selected");
-                    response.put("kpu_id", mode);
+                    
+                    if (Server.playerList.size() % 2 == 0) {
+                        if (modeCount > Server.playerList.size()/2) {
+                            response.put("method", "kpu_selected");
+                            response.put("kpu_id", mode);
+                        }
+                        else {
+                            response.put("status", "fail");
+                            response.put("description", "tidak kuorum");
+                        }
+                    }
+                    else {
+                        if (modeCount >= (Server.playerList.size()+1)/2) {
+                            response.put("method", "kpu_selected");
+                            response.put("kpu_id", mode);
+                        }
+                        else {
+                            response.put("status", "fail");
+                            response.put("description", "tidak kuorum");
+                        }
+                    }                    
                     out.println(response.toString());
                 }
             }
