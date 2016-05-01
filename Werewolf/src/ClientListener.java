@@ -31,10 +31,11 @@ public class ClientListener extends Thread {
         boolean dead = false;
         int idx = 0;
         String vote_result = "[ ";
-        Vector<Integer> voteCount = new Vector();
+        Vector<Integer> voteCount = new Vector<Integer>();
         JSONObject responseJSON = obj;
         
         for (int i=0; i<Client.clients.size(); i++) {
+            System.out.println(Client.clients.size());
             voteCount.add(0);
             if (Client.clients.get(i).getRace() == 1) {
                 playerCount = 1;
@@ -43,6 +44,8 @@ public class ClientListener extends Thread {
         
         try {
             messageCount++;
+            System.out.println("1st count");
+            System.out.println(responseJSON.getInt("player_id"));
             int a = voteCount.get(responseJSON.getInt("player_id"));
             voteCount.set(responseJSON.getInt("player_id"), a+1);
             
@@ -52,6 +55,7 @@ public class ClientListener extends Thread {
                 String method = responseJSON.getString("method");
                 if (method.equals("vote_werewolf")) {
                     messageCount++;
+                    System.out.println("2nd count");
                     a = voteCount.get(responseJSON.getInt("player_id"));
                     voteCount.set(responseJSON.getInt("player_id"), a+1);
                 }
@@ -192,7 +196,7 @@ public class ClientListener extends Thread {
                 }
                 Client.setPrevProposalID(kpu_id);
             }
-            if (method.equals("accept_proposal")) {
+            else if (method.equals("accept_proposal")) {
                 JSONArray temp = responseJSON.getJSONArray("proposal_id");
                 int b = temp.getInt(1);
                 if (b == Client.getPrevProposalID()) {
@@ -208,10 +212,10 @@ public class ClientListener extends Thread {
                     Client.sendToID(b, dataFail);
                 }
             }
-            if (method.equals("vote_werewolf")) {
+            else if (method.equals("vote_werewolf")) {
                 receiveWerewolfVote(responseJSON);
             }
-            if (method.equals("vote_civilian")) {
+            else if (method.equals("vote_civilian")) {
                 receiveCivilianVote(responseJSON);
             }
         }

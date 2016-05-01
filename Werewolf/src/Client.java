@@ -3,6 +3,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.ObjectOutputStream;
 import java.io.PrintWriter;
+import static java.lang.Thread.sleep;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
@@ -84,6 +85,14 @@ public class Client {
     
     public boolean isStart() {
         return start;
+    }
+    
+    public boolean isHuman() {
+        if (this.race == 0) {
+            return true;
+        }
+        
+        return false;
     }
     
     public void setRace (int x) {
@@ -290,7 +299,7 @@ public class Client {
             if (response.getString("method").equals("start")) {
                 start = true;
                 if (response.getString("role").equals("werewolf")) {
-                    this.role = 1;
+                    this.race = 1;
                 }
             }
             
@@ -552,8 +561,8 @@ public class Client {
         c.ready();
         System.out.println("1st phase");
         if (c.isStart()) {
-            while (true) {
                 c.requestClients();
+                sleep(3000);
                 System.out.println("2nd phase");
                 if(c.isHighest()) {
                     c.prepareProposal();
@@ -565,9 +574,10 @@ public class Client {
                 c.spawnServerListener();
                 c.acceptProposalClient();
                 System.out.println("5th phase");
-                c.voteWerewolf(0);
+                if(!c.isHuman()) {
+                    c.voteWerewolf(1);
+                }
                 System.out.println("6th phase");
-            }
         }
         /*
         BufferedReader inFromUser = new BufferedReader(new InputStreamReader(System.in));
