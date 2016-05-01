@@ -18,13 +18,14 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 public class Client {
+    private boolean start = false;
     private String serverIP;
     private int serverPort;
     private BufferedReader is = null;
     private Socket socket = null;  
-    private PrintWriter os = null;
-    private Vector<Client> clients = new Vector();
-    private int kpuID  = 0;
+    private static PrintWriter os = null;
+    public static Vector<Client> clients = new Vector();
+    public static int kpuID  = -1;
     private int playerID;
     private String username;
     private String myAddress;
@@ -45,6 +46,8 @@ public class Client {
             socket = new Socket(addr, port);
             os = new PrintWriter(socket.getOutputStream(), true);
             is = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+            ClientListener cl = new ClientListener(udpPort);
+            cl.start();
             
             this.username = username;
             this.status = 1;
@@ -55,6 +58,10 @@ public class Client {
         } catch (IOException ex) {
             Logger.getLogger(Client.class.getName()).log(Level.SEVERE, null, ex);
         }
+    }
+    
+    public boolean isStart() {
+        return start;
     }
     
     public void setRace (int x) {
@@ -84,6 +91,11 @@ public class Client {
     public static void setPrevProposalID(int x){
         prevProposalID = x;
     }
+    
+    public static void setKpuID(int x) {
+        kpuID = x;
+    }
+    
     public int getRace() {
         return this.race;
     }
@@ -154,11 +166,11 @@ public class Client {
      * Send JSONObject to server
      * @param data JSONObject to be sent
      */
-    private void sendTCP(JSONObject data) {
+    private static void sendTCP(JSONObject data) {
         os.println(data.toString());
     }
     
-    private void sendUDP(JSONObject data, InetAddress addr, int port) {
+    private static void sendUDP(JSONObject data, InetAddress addr, int port) {
         try {
             DatagramSocket udpSocket = new DatagramSocket();
             byte[] sendData = data.toString().getBytes();
@@ -253,6 +265,15 @@ public class Client {
                     System.out.println(response.getString("description"));
                 }
             }
+            
+            response = receiveTCP();
+            if (response.getString("method").equals("start")) {
+                start = true;
+                if (response.getString("role").equals("werewolf")) {
+                    this.role = 1;
+                }
+            }
+            
         } catch (JSONException ex) {
             Logger.getLogger(Client.class.getName()).log(Level.SEVERE, null, ex);
         }
@@ -301,13 +322,10 @@ public class Client {
     
     private void prepareProposal(){
         JSONObject data = new JSONObject();
-        JSONObject responseJSON;
         JSONArray arr = new JSONArray();
         byte[] receiveData = new byte[1024];
         DatagramPacket response = new DatagramPacket(receiveData, receiveData.length);
 
-        int count = 0;
-        int playerCount = 0;
         try {
             arr.put(proposalNumber);
             arr.put(playerID);
@@ -316,13 +334,10 @@ public class Client {
             
             for (int i=0; i<clients.size(); i++) {
                 if (clients.get(i).getStatus() == 1) {
-                    playerCount++;
                     InetAddress targetAddr = InetAddress.getByName(clients.get(i).getMyAddress());
                     sendUDP(data, targetAddr, clients.get(i).getMyPort());
                 }
-            }
-            
-            this.proposalNumber++;            
+            }           
         } catch (JSONException ex) {
             Logger.getLogger(Client.class.getName()).log(Level.SEVERE, null, ex);
         } catch (UnknownHostException ex) {
@@ -332,15 +347,25 @@ public class Client {
     
     private void acceptProposalPaxos(){
         JSONObject data = new JSONObject();
+        JSONArray arr = new JSONArray();
         try {
+            arr.put(proposalNumber);
+            arr.put(playerID);
             data.put("method", "accept_proposal");
-            data.put("proposal_id", "("+proposalNumber+","+playerID+")");
-            data.put("kpu_id", "1");
+            data.put("proposal_id", arr);
+            data.put("kpu_id", kpuID);
+            
+            for (int i=0; i<clients.size(); i++) {
+                if (clients.get(i).getStatus() == 1) {
+                    InetAddress targetAddr = InetAddress.getByName(clients.get(i).getMyAddress());
+                    sendUDP(data, targetAddr, clients.get(i).getMyPort());
+                }
+            }
         } catch (JSONException ex) {
             Logger.getLogger(Client.class.getName()).log(Level.SEVERE, null, ex);
+        } catch (UnknownHostException ex) {
+            Logger.getLogger(Client.class.getName()).log(Level.SEVERE, null, ex);
         }
-        
-        sendTCP(data);
     }
     
     private void acceptProposalClient(){
@@ -368,7 +393,6 @@ public class Client {
             sendUDP(data, targetAddr, clients.get(idx).getMyPort());
             
             while (fail) {
-                Scanner in = new Scanner(System.in);
                 responseJSON = parseToJSON(receiveUDP(getMyPort()));
                 System.out.println(responseJSON);
                 
@@ -385,75 +409,6 @@ public class Client {
                 }
             }
         } catch (JSONException ex) {
-            Logger.getLogger(Client.class.getName()).log(Level.SEVERE, null, ex);
-        } catch (UnknownHostException ex) {
-            Logger.getLogger(Client.class.getName()).log(Level.SEVERE, null, ex);
-        }
-    }
-    
-    private void receiveWerewolfVote() {
-        int playerCount = 2;
-        int messageCount = 0;
-        boolean dead = false;
-        int idx = 0;
-        String vote_result = "[ ";
-        Vector<Integer> voteCount = new Vector();
-        JSONObject data = new JSONObject();
-        JSONObject responseJSON = new JSONObject();
-        
-        /*for(int i=0; i<clients.size(); i++) {
-            voteCount.add(0);
-            if (clients.get(i).getRace() == 1) {
-                if (clients.get(i).getStatus() == 1) {
-                    playerCount++;
-                }
-            }
-        }*/
-        try {
-            while (messageCount != playerCount) {
-                Scanner in = new Scanner(System.in);
-                int port = in.nextInt();
-                responseJSON = parseToJSON(receiveUDP(port));
-
-                String method = responseJSON.getString("method");
-                if (method.equals("vote_werewolf")) {
-                    messageCount++;
-                    int a = voteCount.get(responseJSON.getInt("player_id"));
-                    voteCount.set(responseJSON.getInt("player_id"), a+1);
-                }
-            }
-            
-            data.put("status", "ok");
-            data.put("description", "");
-            
-            for (int i=0; i<clients.size(); i++) {
-                if (clients.get(i).getRace() == 1) {
-                    if (clients.get(i).getStatus() == 1) {
-                        InetAddress targetAddr = InetAddress.getByName(clients.get(i).getMyAddress());
-                        sendUDP(data, targetAddr, clients.get(i).getMyPort());
-                    }
-                }
-            }
-            
-            for (int i=0; i<voteCount.size(); i++) {
-                vote_result += "["+ i + ", " + voteCount.get(i) + "] ";
-                int x = voteCount.get(i);
-                if (x == playerCount) {
-                    idx = i;
-                    dead = true;
-                }
-            }
-            
-            vote_result += "]";
-            
-            if (!dead) {
-                infoWerewolf(-1, -1, vote_result);
-            }
-            else {
-                infoWerewolf(idx, 1, vote_result);
-            }
-        }
-        catch (JSONException ex) {
             Logger.getLogger(Client.class.getName()).log(Level.SEVERE, null, ex);
         } catch (UnknownHostException ex) {
             Logger.getLogger(Client.class.getName()).log(Level.SEVERE, null, ex);
@@ -494,7 +449,7 @@ public class Client {
         }
     }
     
-    private void infoWerewolf(int player_id, int vote_status, String vote_result){
+    public static void infoWerewolf(int player_id, int vote_status, String vote_result){
         JSONObject data = new JSONObject();
         try {
             data.put("method", "vote_result_werewolf");
@@ -510,79 +465,7 @@ public class Client {
         sendTCP(data);
     }
     
-    private void receiveCivilianVote() {
-        int playerCount = 0;
-        int messageCount = 0;
-        boolean dead = false;
-        int idx = 0;
-        String vote_result = "[ ";
-        Vector<Integer> voteCount = new Vector();
-        JSONObject data = new JSONObject();
-        JSONObject responseJSON = new JSONObject();
-        
-        for(int i=0; i<clients.size(); i++) {
-            voteCount.add(0);
-            if (clients.get(i).getStatus() == 1) {
-                playerCount++;
-            }
-        }
-        try {
-            while (messageCount != playerCount) {
-                Scanner in = new Scanner(System.in);
-                int port = in.nextInt();
-                responseJSON = parseToJSON(receiveUDP(port));
-
-                String method = responseJSON.getString("method");
-                if (method.equals("vote_civilian")) {
-                    messageCount++;
-                    int a = voteCount.get(responseJSON.getInt("player_id"));
-                    voteCount.set(responseJSON.getInt("player_id"), a+1);
-                }
-            }
-            
-            data.put("status", "ok");
-            data.put("description", "");
-            
-            for (int i=0; i<clients.size(); i++) {
-                if (clients.get(i).getStatus() == 1) {
-                    InetAddress targetAddr = InetAddress.getByName(clients.get(i).getMyAddress());
-                    sendUDP(data, targetAddr, clients.get(i).getMyPort());
-                }
-            }
-            
-            int max = -1;
-            int secondMax = -1;
-            for (int i=0; i<voteCount.size(); i++) {
-                vote_result += "["+ i + ", " + voteCount.get(i) + "] ";
-                int x = voteCount.get(i);
-                if (max <= x) {
-                    secondMax= max;
-                    max = x;
-                    idx = i;
-                }
-            }            
-            
-            if (secondMax != max) {
-                dead = true;
-            }
-            
-            vote_result += "]";
-            
-            if (!dead) {
-                infoCivilian(-1, -1, vote_result);
-            }
-            else {
-                infoCivilian(idx, 1, vote_result);
-            }
-        }
-        catch (JSONException ex) {
-            Logger.getLogger(Client.class.getName()).log(Level.SEVERE, null, ex);
-        } catch (UnknownHostException ex) {
-            Logger.getLogger(Client.class.getName()).log(Level.SEVERE, null, ex);
-        }
-    }
-    
-    private void infoCivilian(int player_id, int vote_status, String vote_result){
+    public static void infoCivilian(int player_id, int vote_status, String vote_result){
         JSONObject data = new JSONObject();
         try {
             data.put("method", "vote_result_civilian");
@@ -618,6 +501,16 @@ public class Client {
         return -1;
     }
     
+    public static void sendToID(int id, JSONObject data) {
+        
+        try {
+            InetAddress targetAddr = InetAddress.getByName(clients.get(id).getMyAddress());
+            sendUDP(data, targetAddr, clients.get(id).getMyPort());
+        } catch (UnknownHostException ex) {
+            Logger.getLogger(Client.class.getName()).log(Level.SEVERE, null, ex);
+        }
+    }
+    
 /**
  * Contoh kode program untuk node yang mengirimkan paket. Paket dikirim
  * menggunakan UnreliableSender untuk mensimulasikan paket yang hilang.
@@ -625,21 +518,30 @@ public class Client {
     public static void main(String args[]) throws Exception
     {
         Scanner in = new Scanner(System.in);
-        System.out.print("Server IP: ");
-        String addr = in.nextLine();
-        System.out.print("Server Port: ");
-        int port = in.nextInt();
+        System.out.print("Username: ");
+        String username = in.nextLine();
+        //System.out.print("Server IP: ");
+        String addr = "localhost";
+        //System.out.print("Server Port: ");
+        int port = 1000;
         System.out.print("UDP Port: ");
         int udpPort = in.nextInt();
-        Client c = new Client("client1", addr, port, udpPort);
+        Client c = new Client(username, addr, port, udpPort);
         c.join();
+        c.ready();
         System.out.println("1st phase");
-        c.requestClients();
-        System.out.println("2nd phase");
-        c.voteWerewolf(0);
-        System.out.println("3rd phase");
-        c.receiveWerewolfVote();
-        System.out.println("4th phase");
+        if (c.isStart()) {
+            c.requestClients();
+            System.out.println("2nd phase");
+            c.prepareProposal();
+            System.out.println("3rd phase");
+            c.acceptProposalPaxos();
+            System.out.println("4th phase");
+            c.acceptProposalClient();
+            System.out.println("5th phase");
+            c.voteWerewolf(0);
+            System.out.println("6th phase");
+        }
         while (true) {
             
         }

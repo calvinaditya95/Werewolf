@@ -170,7 +170,7 @@ public class Player extends Thread {
                         readyPlayers++;
                     }                        
                 }
-                if (readyPlayers == Server.playerList.size()) {
+                if (readyPlayers == Server.playerList.size() && readyPlayers >= 6) {
                     Server.startGame();
                 }
             }
