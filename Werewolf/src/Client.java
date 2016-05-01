@@ -32,7 +32,7 @@ public class Client {
     private int status;
     private int race = 0; //0-1
     private int role = 0; //0-2
-    private int prevProposalID = 0;
+    public static int prevProposalID = 0;
     private int proposalNumber = 0;
     
     /**
@@ -40,7 +40,7 @@ public class Client {
      * @param addr server IP Address
      * @param port server port
      */
-    public Client(String username, String addr, int port) {
+    public Client(String username, String addr, int port, int udpPort) {
         try {
             socket = new Socket(addr, port);
             os = new PrintWriter(socket.getOutputStream(), true);
@@ -49,7 +49,7 @@ public class Client {
             this.username = username;
             this.status = 1;
             this.myAddress = InetAddress.getLocalHost().getHostAddress();
-            this.myPort = 9876;
+            this.myPort = udpPort;
             this.serverIP = addr;
             this.serverPort = port;
         } catch (IOException ex) {
@@ -81,6 +81,9 @@ public class Client {
         this.playerID = x;
     }
     
+    public static void setPrevProposalID(int x){
+        prevProposalID = x;
+    }
     public int getRace() {
         return this.race;
     }
@@ -103,6 +106,10 @@ public class Client {
     
     public int getID() {
         return this.playerID;
+    }
+    
+    public static int getPrevProposalID() {
+        return prevProposalID;
     }
     
     /**
@@ -178,8 +185,7 @@ public class Client {
         return obj;
     }
     
-    private DatagramPacket receiveUDP() {
-        int listenPort = 9876;
+    private DatagramPacket receiveUDP(int listenPort) {
         DatagramSocket serverSocket;
         try {
             serverSocket = new DatagramSocket(listenPort);
@@ -187,6 +193,7 @@ public class Client {
 
             DatagramPacket receivePacket = new DatagramPacket(receiveData, receiveData.length);
             serverSocket.receive(receivePacket);
+            
             return receivePacket;
         } catch (SocketException ex) {
             Logger.getLogger(Client.class.getName()).log(Level.SEVERE, null, ex);
@@ -270,9 +277,8 @@ public class Client {
                     
                     for (int i=0; i<clientJSON.length(); i++) {
                         JSONObject temp = clientJSON.getJSONObject(i);
-                        Client tempClient = new Client(temp.getString("username"), this.serverIP, this.serverPort);
+                        Client tempClient = new Client(temp.getString("username"), this.serverIP, this.serverPort, temp.getInt("port"));
                         tempClient.setMyAddress(temp.getString("address"));
-                        tempClient.setMyPort(temp.getInt("port"));
                         tempClient.setStatus(temp.getInt("is_alive"));
                         tempClient.setID(temp.getInt("player_id"));
                         if (temp.has("role")) {
@@ -296,15 +302,17 @@ public class Client {
     private void prepareProposal(){
         JSONObject data = new JSONObject();
         JSONObject responseJSON;
-        
+        JSONArray arr = new JSONArray();
         byte[] receiveData = new byte[1024];
         DatagramPacket response = new DatagramPacket(receiveData, receiveData.length);
 
         int count = 0;
         int playerCount = 0;
         try {
+            arr.put(proposalNumber);
+            arr.put(playerID);
             data.put("method", "prepare_proposal");
-            data.put("proposal_id", "("+proposalNumber+","+playerID+")");
+            data.put("proposal_id", arr);
             
             for (int i=0; i<clients.size(); i++) {
                 if (clients.get(i).getStatus() == 1) {
@@ -360,7 +368,10 @@ public class Client {
             sendUDP(data, targetAddr, clients.get(idx).getMyPort());
             
             while (fail) {
-                responseJSON = parseToJSON(receiveUDP());
+                Scanner in = new Scanner(System.in);
+                responseJSON = parseToJSON(receiveUDP(getMyPort()));
+                System.out.println(responseJSON);
+                
                 String status = responseJSON.getString("status");
                 
                 if (status.equals("ok")) {
@@ -381,7 +392,7 @@ public class Client {
     }
     
     private void receiveWerewolfVote() {
-        int playerCount = 0;
+        int playerCount = 2;
         int messageCount = 0;
         boolean dead = false;
         int idx = 0;
@@ -390,17 +401,19 @@ public class Client {
         JSONObject data = new JSONObject();
         JSONObject responseJSON = new JSONObject();
         
-        for(int i=0; i<clients.size(); i++) {
+        /*for(int i=0; i<clients.size(); i++) {
             voteCount.add(0);
             if (clients.get(i).getRace() == 1) {
                 if (clients.get(i).getStatus() == 1) {
                     playerCount++;
                 }
             }
-        }
+        }*/
         try {
             while (messageCount != playerCount) {
-                responseJSON = parseToJSON(receiveUDP());
+                Scanner in = new Scanner(System.in);
+                int port = in.nextInt();
+                responseJSON = parseToJSON(receiveUDP(port));
 
                 String method = responseJSON.getString("method");
                 if (method.equals("vote_werewolf")) {
@@ -459,7 +472,9 @@ public class Client {
             sendUDP(data, targetAddr, clients.get(idx).getMyPort());
             
             while (fail) {
-                responseJSON = parseToJSON(receiveUDP());
+                Scanner in = new Scanner(System.in);
+                int port = in.nextInt();
+                responseJSON = parseToJSON(receiveUDP(port));
                 String status = responseJSON.getString("status");
                 
                 if (status.equals("ok")) {
@@ -513,7 +528,9 @@ public class Client {
         }
         try {
             while (messageCount != playerCount) {
-                responseJSON = parseToJSON(receiveUDP());
+                Scanner in = new Scanner(System.in);
+                int port = in.nextInt();
+                responseJSON = parseToJSON(receiveUDP(port));
 
                 String method = responseJSON.getString("method");
                 if (method.equals("vote_civilian")) {
@@ -610,9 +627,11 @@ public class Client {
         Scanner in = new Scanner(System.in);
         System.out.print("Server IP: ");
         String addr = in.nextLine();
-        System.out.print("Port: ");
+        System.out.print("Server Port: ");
         int port = in.nextInt();
-        Client c = new Client("client1", addr, port);
+        System.out.print("UDP Port: ");
+        int udpPort = in.nextInt();
+        Client c = new Client("client1", addr, port, udpPort);
         c.join();
         System.out.println("1st phase");
         c.requestClients();

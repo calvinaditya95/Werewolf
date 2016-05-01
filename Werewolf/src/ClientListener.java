@@ -6,38 +6,40 @@ import java.net.InetAddress;
 import java.net.SocketException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import org.json.JSONArray;
+import org.json.JSONException;
 import org.json.JSONObject;
 
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
-
-/**
- *
- * @author Asus
- */
 public class ClientListener extends Thread {  
     private boolean done = false;
-    private int senderNum;
     private int messageNum = 0;
+    private int myPort;
     
     public ClientListener(int i) {
-        this.senderNum = i;
+        this.myPort = i;
     }
     
-    private void listenProposal() {
+    public int getPort(){
+        return myPort;
+    }
+    
+    private void listenProposal() throws JSONException {
         DatagramPacket response = null;
         JSONObject responseJSON = new JSONObject();
         
-        response = receiveUDP();
+        response = receiveUDP(myPort);
         responseJSON = Client.parseToJSON(response);
-        
+        if(responseJSON.has("method")){
+            String method = responseJSON.getString("method");
+            if (method.equals("prepare_proposal")){
+                JSONArray temp = responseJSON.getJSONArray("proposal_id");
+                int a = temp.getInt(0);
+                int b = temp.getInt(1);
+            }
+        }
     }
     
-    private DatagramPacket receiveUDP() {
-        int listenPort = 9876;
+    private DatagramPacket receiveUDP(int listenPort) {
         DatagramSocket serverSocket;
         try {
             serverSocket = new DatagramSocket(listenPort);
