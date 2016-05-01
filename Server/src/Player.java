@@ -5,7 +5,6 @@ import org.json.JSONObject;
 import org.json.JSONArray;
 
 public class Player extends Thread {
-    public int id;
     public String username;
     public String udp_address;
     public int udp_port;
@@ -84,11 +83,7 @@ public class Player extends Thread {
     }
     
     public void killPlayer(int id) {
-        for (int i = 0; i < Server.playerList.size(); i++) {
-            if (Server.playerList.get(i).id == id) {
-                Server.playerList.get(i).is_alive = 0;
-            }
-        }
+        Server.playerList.get(id).is_alive = 0;
     }
     
     public void changePhase() {
@@ -143,7 +138,6 @@ public class Player extends Thread {
             
             if (method.equals("join")) {
                 username = request.getString("username");
-                id = Server.nextId;
                 Server.nextId++;
                 
                 udp_address = request.getString("udp_address");
@@ -151,7 +145,7 @@ public class Player extends Thread {
                 is_alive = 1;
                 ready = false;
                 
-                if (id == 2 || id == 3)
+                if (Server.playerList.indexOf(this) == 2 || Server.playerList.indexOf(this) == 3)
                     role = "werewolf";
                 else
                     role = "civilian";
@@ -160,7 +154,7 @@ public class Player extends Thread {
                 
                 JSONObject response = new JSONObject();
                 response.put("status", "ok");
-                response.put("player_id", id);
+                response.put("player_id", Server.playerList.indexOf(this));
                 out.println(response.toString());
             }
             else if (method.equals("ready")) {
@@ -205,7 +199,7 @@ public class Player extends Thread {
                     Player p = Server.playerList.get(i);
                     
                     JSONObject temp = new JSONObject();
-                    temp.put("player_id", p.id);
+                    temp.put("player_id", i);
                     temp.put("is_alive", p.is_alive);
                     temp.put("address", p.udp_address);
                     temp.put("port", p.udp_port);
