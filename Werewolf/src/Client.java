@@ -2,6 +2,8 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
+import static java.lang.Math.random;
+import static java.lang.StrictMath.random;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
@@ -13,6 +15,7 @@ import java.util.Vector;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
+import java.util.Random;
 
 public class Client extends Thread {
     public static int playerID;
@@ -324,12 +327,16 @@ public class Client extends Thread {
     }
     
     public static void sendUDP(JSONObject data, InetAddress addr, int port) {
+        Random random = new Random();
         try {
             byte[] sendData = data.toString().getBytes();
             DatagramPacket sendPacket = new DatagramPacket(sendData, sendData.length, addr, port);
-            udpSocket.send(sendPacket);
-            if (!data.has("status"))
-                lastSent = data;
+            double rand = random.nextDouble();
+		if (rand < 0.85) {
+			udpSocket.send(sendPacket);
+                        if (!data.has("status"))
+                            lastSent = data;
+                }
         }
         catch (SocketException e) {
             System.out.println(e);
@@ -340,14 +347,18 @@ public class Client extends Thread {
     }
     
     public static void sendUDPByID(JSONObject data, int id) {
+        Random random = new Random();
         try {
             for (Clients c : clients) {
                 if (c.player_id == id) {
                     byte[] sendData = data.toString().getBytes();
                     DatagramPacket sendPacket = new DatagramPacket(sendData, sendData.length, InetAddress.getByName(c.address), c.port);
-                    udpSocket.send(sendPacket);
-                    if (!data.has("status"))
-                        lastSent = data;
+                    double rand = random.nextDouble();
+                    if (rand < 0.85) {
+			udpSocket.send(sendPacket);
+                        if (!data.has("status"))
+                            lastSent = data;
+                    }
                 }
             }            
         }
