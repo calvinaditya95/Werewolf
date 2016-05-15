@@ -144,9 +144,12 @@ public class Client extends Thread {
                 data.put("method", "prepare_proposal");
                 data.put("proposal_id", arr);
 
+                Random random = new Random();
                 for (Clients client : clients) {
                     InetAddress targetAddr = InetAddress.getByName(client.address);
-                    sendUDP(data, targetAddr, client.port);
+                    double rand = random.nextDouble();
+                    if (rand > 0.85)
+                        sendUDP(data, targetAddr, client.port);
                 }
             } catch (JSONException | UnknownHostException e) {
                 System.out.println(e);
@@ -164,10 +167,14 @@ public class Client extends Thread {
                 data.put("method", "accept_proposal");
                 data.put("proposal_id", arr);
                 data.put("kpu_id", playerID);
-
+                
+                Random random = new Random();
                 for (Clients client : clients) {
                     InetAddress targetAddr = InetAddress.getByName(client.address);
-                    sendUDP(data, targetAddr, client.port);
+                    
+                    double rand = random.nextDouble();
+                    if (rand > 0.85)
+                        sendUDP(data, targetAddr, client.port);
                 }
             } catch (JSONException | UnknownHostException e) {
                 System.out.println(e);
@@ -180,7 +187,7 @@ public class Client extends Thread {
             JSONObject data = new JSONObject();
             data.put("method", "accepted_proposal");
             data.put("kpu_id", kpuID);
-            data.put("Description", "Kpu is selected");
+            data.put("description", "Kpu is selected");
             sendTCP(data);
         } catch (JSONException e) {
             System.out.println(e);
@@ -222,6 +229,11 @@ public class Client extends Thread {
                         System.out.println("Choose a civilian to kill\t: ");
                         id = consoleInput.nextInt();
                         consoleInput.nextLine();
+                        while (id == playerID) {
+                            System.out.println("You cannot vote for yourself");
+                            id = consoleInput.nextInt();
+                            consoleInput.nextLine();
+                        }
                         voteCivilian(id);
                         isVoting = false;
                         break;
@@ -231,6 +243,11 @@ public class Client extends Thread {
                             System.out.println("Choose a civilian to kill\t: ");
                             id = consoleInput.nextInt();
                             consoleInput.nextLine();
+                            while (id == playerID) {
+                                System.out.println("You cannot vote for yourself");
+                                id = consoleInput.nextInt();
+                                consoleInput.nextLine();
+                            }
                             voteWerewolf(id);
                         }
                         else {
@@ -327,16 +344,12 @@ public class Client extends Thread {
     }
     
     public static void sendUDP(JSONObject data, InetAddress addr, int port) {
-        Random random = new Random();
         try {
             byte[] sendData = data.toString().getBytes();
             DatagramPacket sendPacket = new DatagramPacket(sendData, sendData.length, addr, port);
-            double rand = random.nextDouble();
-		if (rand < 0.85) {
-			udpSocket.send(sendPacket);
-                        if (!data.has("status"))
-                            lastSent = data;
-                }
+            udpSocket.send(sendPacket);
+            if (!data.has("status"))
+                lastSent = data;
         }
         catch (SocketException e) {
             System.out.println(e);
@@ -347,18 +360,14 @@ public class Client extends Thread {
     }
     
     public static void sendUDPByID(JSONObject data, int id) {
-        Random random = new Random();
         try {
             for (Clients c : clients) {
                 if (c.player_id == id) {
                     byte[] sendData = data.toString().getBytes();
                     DatagramPacket sendPacket = new DatagramPacket(sendData, sendData.length, InetAddress.getByName(c.address), c.port);
-                    double rand = random.nextDouble();
-                    if (rand < 0.85) {
-			udpSocket.send(sendPacket);
-                        if (!data.has("status"))
-                            lastSent = data;
-                    }
+                    udpSocket.send(sendPacket);
+                    if (!data.has("status"))
+                        lastSent = data;
                 }
             }            
         }

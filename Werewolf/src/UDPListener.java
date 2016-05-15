@@ -24,7 +24,6 @@ public class UDPListener extends Thread {
                 udpSocket.receive(receivePacket);                
                 
                 String input = new String(receivePacket.getData(), 0, receivePacket.getLength());
-                System.out.println(input);
                 if (lastReceived != null) {
                     if (receivePacket.getAddress().equals(lastReceived.getAddress()) && receivePacket.getPort() == lastReceived.getPort() && lastInput.equals(input)) {
                         //Do nothing, duplicate packet

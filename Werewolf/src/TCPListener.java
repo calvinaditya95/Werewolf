@@ -18,7 +18,6 @@ public class TCPListener extends Thread {
             
             while (true) {
                 line = in.readLine();
-                System.out.println(line);
                 Process p = new Process(line);
                 p.start();
             }

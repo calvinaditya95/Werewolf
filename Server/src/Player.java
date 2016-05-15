@@ -104,6 +104,7 @@ public class Player extends Thread {
                 else if (Server.time.equals("night")) {
                     Server.time = "day";
                     Server.days++;
+                    Server.kuorum = false;
                 }
 
                 response.put("time", Server.time);
@@ -216,6 +217,21 @@ public class Player extends Thread {
                     response.put("clients", arr);
                     response.put("description", "list of clients retrieved");
                     out.println(response.toString());
+                    
+                    if (Server.time.equals("day")) {
+                        long startTime = System.nanoTime();
+                        while (!Server.kuorum) {
+                            long elapsedTime = (System.nanoTime() - startTime) / 1000000;
+
+                            if (elapsedTime > 5000) {
+                                response = new JSONObject();
+                                response.put("status", "fail");
+                                response.put("description", "tidak kuorum");
+                                out.println(response.toString());
+                                break;
+                            }
+                        }
+                    }
                 }
                 else if (method.equals("accepted_proposal")) {
                     int kpuId = request.getInt("kpu_id");
@@ -254,6 +270,7 @@ public class Player extends Thread {
                             if (modeCount > Server.playerList.size()/2) {
                                 response.put("method", "kpu_selected");
                                 response.put("kpu_id", mode);
+                                Server.kuorum = true;
                             }
                             else {
                                 response.put("status", "fail");
@@ -264,6 +281,7 @@ public class Player extends Thread {
                             if (modeCount >= (Server.playerList.size()+1)/2) {
                                 response.put("method", "kpu_selected");
                                 response.put("kpu_id", mode);
+                                Server.kuorum = true;
                             }
                             else {
                                 response.put("status", "fail");
@@ -271,6 +289,20 @@ public class Player extends Thread {
                             }
                         }                    
                         sendToAll(response.toString());
+                    }
+                    else {
+                        long startTime = System.nanoTime();
+                        while (!Server.kuorum) {
+                            long elapsedTime = (System.nanoTime() - startTime) / 1000000;
+
+                            if (elapsedTime > 5000) {
+                                response = new JSONObject();
+                                response.put("status", "fail");
+                                response.put("description", "tidak kuorum");
+                                sendToAll(response.toString());
+                                break;
+                            }
+                        }
                     }
                 }
                 else if (method.equals("vote_result_werewolf")) {

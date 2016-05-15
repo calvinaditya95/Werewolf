@@ -258,6 +258,7 @@ public class Process extends Thread {
                     }
                     if (input.has("clients")) {
                         JSONArray clients = input.getJSONArray("clients");
+                        System.out.println(clients.toString());
                         Client.clients.clear();
                         for (int i = 0; i < clients.length(); i++) {
                             JSONObject client = clients.getJSONObject(i);
@@ -284,10 +285,15 @@ public class Process extends Thread {
                     }
                 }
                 else if (status.equals("error")) {
-                    System.out.println(input.getString("description"));
+                    //System.out.println("Error " + input.getString("description"));
                 }
                 else if (status.equals("fail")) {
-                    System.out.println(input.getString("description"));
+                    //System.out.println("Fail: " + input.getString("description"));
+                    if (input.has("description")) {
+                        if (input.getString("description").equals("tidak kuorum")) {
+                            Client.prepareProposal();
+                        }
+                    }
                 }
             }
             join();

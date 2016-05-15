@@ -17,6 +17,7 @@ public class Server {
     public static int civilianVoteCount;
     public static boolean gameStarted;
     public static int nextId;
+    public static boolean kuorum = false;
     
     public static void deletePlayer(Player p) {
         playerList.remove(p);
