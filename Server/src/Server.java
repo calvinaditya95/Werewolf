@@ -59,8 +59,12 @@ public class Server {
         nextId = 0;
         gameStarted = false;
 
+        /*
         System.out.print("Enter port number\t: ");
         port = consoleInput.nextInt();
+        */
+        
+        port = 9999;
 
         try {
             serverSocket = new ServerSocket(port);

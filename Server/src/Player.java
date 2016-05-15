@@ -134,208 +134,213 @@ public class Player extends Thread {
     public void process(String input) {
         try {
             JSONObject request = new JSONObject(input);
-            String method = request.getString("method");
-            System.out.println(input);
-            
-            if (method.equals("join")) {
-                username = request.getString("username");
-                Server.nextId++;
-                
-                udp_address = request.getString("udp_address");
-                udp_port = request.getInt("udp_port");
-                is_alive = 1;
-                ready = false;
-                
-                Server.playerList.add(this);
-                
-                if (Server.playerList.indexOf(this) == 2 || Server.playerList.indexOf(this) == 3)
-                    role = "werewolf";
-                else
-                    role = "civilian";                
-                
-                JSONObject response = new JSONObject();
-                response.put("status", "ok");
-                response.put("player_id", Server.playerList.indexOf(this));
-                out.println(response.toString());
-            }
-            else if (method.equals("ready")) {
-                ready = true;
-                JSONObject response = new JSONObject();
-                response.put("status", "ok");
-                response.put("description", "waiting for other player to start");
-                out.println(response.toString());
+            if (request.has("method")) {
+                String method = request.getString("method");
+                System.out.println(input);
 
-                int readyPlayers = 0;
-                for (int i = 0; i < Server.playerList.size(); i++) {
-                    if (Server.playerList.get(i).ready) {
-                        readyPlayers++;
-                    }                        
-                }
-                if (readyPlayers == Server.playerList.size() && readyPlayers >= 6) {
-                    Server.startGame();
-                }
-            }
-            else if (method.equals("leave")) {
-                if (!Server.gameStarted) {
+                if (method.equals("join")) {
+                    username = request.getString("username");
+                    Server.nextId++;
+
+                    udp_address = request.getString("udp_address");
+                    udp_port = request.getInt("udp_port");
+                    is_alive = 1;
                     ready = false;
+
+                    Server.playerList.add(this);
+
+                    if (Server.playerList.indexOf(this) == 2 || Server.playerList.indexOf(this) == 3)
+                        role = "werewolf";
+                    else
+                        role = "civilian";                
+
                     JSONObject response = new JSONObject();
                     response.put("status", "ok");
+                    response.put("player_id", Server.playerList.indexOf(this));
                     out.println(response.toString());
-                    Server.deletePlayer(this);
-                    
                 }
-                else {
+                else if (method.equals("ready")) {
+                    ready = true;
                     JSONObject response = new JSONObject();
-                    response.put("status", "fail");
-                    response.put("description", "Failed to leave game");
+                    response.put("status", "ok");
+                    response.put("description", "waiting for other player to start");
                     out.println(response.toString());
-                }
-            }
-            else if (method.equals("client_address")) {
-                JSONObject response = new JSONObject();
-                response.put("status", "ok");
-                
-                JSONArray arr = new JSONArray();
-                for (int i = 0; i < Server.playerList.size(); i++) {
-                    Player p = Server.playerList.get(i);
-                    
-                    JSONObject temp = new JSONObject();
-                    temp.put("player_id", i);
-                    temp.put("is_alive", p.is_alive);
-                    temp.put("address", p.udp_address);
-                    temp.put("port", p.udp_port);
-                    temp.put("username", p.username);
-                    if (p.is_alive == 0) {
-                        temp.put("role", p.role);
+
+                    int readyPlayers = 0;
+                    for (int i = 0; i < Server.playerList.size(); i++) {
+                        if (Server.playerList.get(i).ready) {
+                            readyPlayers++;
+                        }                        
                     }
-                    
-                    arr.put(temp);
-                }
-                
-                response.put("clients", arr);
-                response.put("description", "list of clients retrieved");
-                out.println(response.toString());
-            }
-            else if (method.equals("accepted_proposal")) {
-                int kpuId = request.getInt("kpu_id");
-                Server.acceptedProposal.add(kpuId);
-                
-                JSONObject response = new JSONObject();
-                response.put("status", "ok");
-                response.put("description", "");
-                out.println(response.toString());
-                
-                if (Server.acceptedProposal.size() >= Server.playerList.size()-2) {
-                    int mode = Server.acceptedProposal.get(0);
-                    int modeCount = 0;
-                    
-                    for(int i = 0; i < Server.acceptedProposal.size(); i++) {
-                        int curInt = Server.acceptedProposal.get(i);
-                        int count = 0;
-                        
-                        for (int j = 0; j < Server.acceptedProposal.size(); j++) {
-                            if (Server.acceptedProposal.get(j) == curInt)
-                                count++;
-                        }
-                        
-                        if (count > modeCount) {
-                            modeCount = count;
-                            mode = curInt;
-                        }
-                        else if (count == modeCount && curInt > mode) {
-                            mode = curInt;
-                        }
+                    if (readyPlayers == Server.playerList.size() && readyPlayers >= 6) {
+                        Server.startGame();
                     }
-                    
-                    response = new JSONObject();
-                    
-                    if (Server.playerList.size() % 2 == 0) {
-                        if (modeCount > Server.playerList.size()/2) {
-                            response.put("method", "kpu_selected");
-                            response.put("kpu_id", mode);
-                        }
-                        else {
-                            response.put("status", "fail");
-                            response.put("description", "tidak kuorum");
-                        }
+                }
+                else if (method.equals("leave")) {
+                    if (!Server.gameStarted) {
+                        ready = false;
+                        JSONObject response = new JSONObject();
+                        response.put("status", "ok");
+                        out.println(response.toString());
+                        Server.deletePlayer(this);
+
                     }
                     else {
-                        if (modeCount >= (Server.playerList.size()+1)/2) {
-                            response.put("method", "kpu_selected");
-                            response.put("kpu_id", mode);
+                        JSONObject response = new JSONObject();
+                        response.put("status", "fail");
+                        response.put("description", "Failed to leave game");
+                        out.println(response.toString());
+                    }
+                }
+                else if (method.equals("client_address")) {
+                    JSONObject response = new JSONObject();
+                    response.put("status", "ok");
+
+                    JSONArray arr = new JSONArray();
+                    for (int i = 0; i < Server.playerList.size(); i++) {
+                        Player p = Server.playerList.get(i);
+
+                        JSONObject temp = new JSONObject();
+                        temp.put("player_id", i);
+                        temp.put("is_alive", p.is_alive);
+                        temp.put("address", p.udp_address);
+                        temp.put("port", p.udp_port);
+                        temp.put("username", p.username);
+                        if (p.is_alive == 0) {
+                            temp.put("role", p.role);
+                        }
+
+                        arr.put(temp);
+                    }
+
+                    response.put("clients", arr);
+                    response.put("description", "list of clients retrieved");
+                    out.println(response.toString());
+                }
+                else if (method.equals("accepted_proposal")) {
+                    int kpuId = request.getInt("kpu_id");
+                    Server.acceptedProposal.add(kpuId);
+
+                    JSONObject response = new JSONObject();
+                    response.put("status", "ok");
+                    response.put("description", "");
+                    out.println(response.toString());
+
+                    if (Server.acceptedProposal.size() >= Server.playerList.size()-2) {
+                        int mode = Server.acceptedProposal.get(0);
+                        int modeCount = 0;
+
+                        for(int i = 0; i < Server.acceptedProposal.size(); i++) {
+                            int curInt = Server.acceptedProposal.get(i);
+                            int count = 0;
+
+                            for (int j = 0; j < Server.acceptedProposal.size(); j++) {
+                                if (Server.acceptedProposal.get(j) == curInt)
+                                    count++;
+                            }
+
+                            if (count > modeCount) {
+                                modeCount = count;
+                                mode = curInt;
+                            }
+                            else if (count == modeCount && curInt > mode) {
+                                mode = curInt;
+                            }
+                        }
+
+                        response = new JSONObject();
+
+                        if (Server.playerList.size() % 2 == 0) {
+                            if (modeCount > Server.playerList.size()/2) {
+                                response.put("method", "kpu_selected");
+                                response.put("kpu_id", mode);
+                            }
+                            else {
+                                response.put("status", "fail");
+                                response.put("description", "tidak kuorum");
+                            }
                         }
                         else {
-                            response.put("status", "fail");
-                            response.put("description", "tidak kuorum");
-                        }
-                    }                    
-                    sendToAll(response.toString());
+                            if (modeCount >= (Server.playerList.size()+1)/2) {
+                                response.put("method", "kpu_selected");
+                                response.put("kpu_id", mode);
+                            }
+                            else {
+                                response.put("status", "fail");
+                                response.put("description", "tidak kuorum");
+                            }
+                        }                    
+                        sendToAll(response.toString());
+                    }
                 }
-            }
-            else if (method.equals("vote_result_werewolf")) {
-                int vote_status = request.getInt("vote_status");
-                if (vote_status == 1) {
-                    int player_killed = request.getInt("player_killed");
-                    killPlayer(player_killed);
-                    
-                    JSONObject response = new JSONObject();
-                    response.put("status", "ok");
-                    response.put("description", "");
-                    out.println(response.toString());
-                    
-                    changePhase();
-                }
-                else if (vote_status == -1) {
-                    JSONObject response = new JSONObject();
-                    response.put("status", "ok");
-                    response.put("description", "");
-                    out.println(response.toString());
-                    
-                    try {
-                        sleep(1000);
-                    }
-                    catch (InterruptedException e) {
-                        System.out.println(e);
-                    }
-                    
-                    voteNow();
-                }
-            }
-            else if (method.equals("vote_result_civilian")) {
-                Server.civilianVoteCount++;
-                int vote_status = request.getInt("vote_status");
-                
-                if (vote_status == 1) {
-                    int player_killed = request.getInt("player_killed");
-                    killPlayer(player_killed);
-                    
-                    JSONObject response = new JSONObject();
-                    response.put("status", "ok");
-                    response.put("description", "");
-                    out.println(response.toString());
-                    
-                    changePhase();
-                }
-                else if (vote_status == -1) {
-                    JSONObject response = new JSONObject();
-                    response.put("status", "ok");
-                    response.put("description", "");
-                    out.println(response.toString());
-                    
-                    try {
-                        sleep(1000);
-                    }
-                    catch (InterruptedException e) {
-                        System.out.println(e);
-                    }
-                    
-                    if (Server.civilianVoteCount < 2) {
-                        voteNow();
-                    }
-                    else {
+                else if (method.equals("vote_result_werewolf")) {
+                    int vote_status = request.getInt("vote_status");
+                    if (vote_status == 1) {
+                        int player_killed = request.getInt("player_killed");
+                        killPlayer(player_killed);
+
+                        JSONObject response = new JSONObject();
+                        response.put("status", "ok");
+                        response.put("description", "");
+                        out.println(response.toString());
+
                         changePhase();
                     }
+                    else if (vote_status == -1) {
+                        JSONObject response = new JSONObject();
+                        response.put("status", "ok");
+                        response.put("description", "");
+                        out.println(response.toString());
+
+                        try {
+                            sleep(1000);
+                        }
+                        catch (InterruptedException e) {
+                            System.out.println(e);
+                        }
+
+                        voteNow();
+                    }
                 }
+                else if (method.equals("vote_result_civilian")) {
+                    Server.civilianVoteCount++;
+                    int vote_status = request.getInt("vote_status");
+
+                    if (vote_status == 1) {
+                        int player_killed = request.getInt("player_killed");
+                        killPlayer(player_killed);
+
+                        JSONObject response = new JSONObject();
+                        response.put("status", "ok");
+                        response.put("description", "");
+                        out.println(response.toString());
+
+                        changePhase();
+                    }
+                    else if (vote_status == -1) {
+                        JSONObject response = new JSONObject();
+                        response.put("status", "ok");
+                        response.put("description", "");
+                        out.println(response.toString());
+
+                        try {
+                            sleep(1000);
+                        }
+                        catch (InterruptedException e) {
+                            System.out.println(e);
+                        }
+
+                        if (Server.civilianVoteCount < 2) {
+                            voteNow();
+                        }
+                        else {
+                            changePhase();
+                        }
+                    }
+                }
+            }
+            else if (request.has("status")) {
+                System.out.println(request.toString());
             }
         }
         catch (JSONException e) {
